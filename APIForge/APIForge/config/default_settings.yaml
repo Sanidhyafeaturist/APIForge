@@ -1,0 +1,50 @@
+api_info:
+  default_version: "1.0.0"
+  default_base_url: "https://api.default.com"
+  default_description: "Default API for APIForge"
+  authentication:
+    type: "bearer_token"
+    token_url: "https://auth.default.com/token"
+    scopes: ["read", "write"]
+
+endpoints:
+  default_method: "GET"
+  response_types:
+    success: 200
+    error: 400
+
+generation_settings:
+  languages:
+    python:
+      library: "requests"
+      output_directory: "./clients/python/"
+      use_async: false  # Default: synchronous requests
+    cpp:
+      library: "libcurl"
+      output_directory: "./clients/cpp/"
+      use_multithreading: false  # Default: single-threaded
+    javascript:
+      library: "axios"
+      output_directory: "./clients/javascript/"
+      promise_based: true  # Default: promise-based async requests
+    go:
+      library: "http.Client"
+      output_directory: "./clients/go/"
+      use_concurrency: false  # Default: no goroutine concurrency
+
+common_settings:
+  timeout: 60  # Default timeout for all API requests (seconds)
+  retry_policy:
+    max_attempts: 5  # Default max retry attempts
+    backoff_strategy: "linear"  # Options: linear, exponential
+  logging:
+    enabled: true  # Default to enable logging
+    level: "INFO"  # Logging level: DEBUG, INFO, WARNING, ERROR
+    format: "[%(asctime)s] %(levelname)s: %(message)s"
+  headers:
+    User-Agent: "APIForge-Client"
+    Content-Type: "application/json"
+
+template_options:
+  include_comments: true  # Include comments in generated code
+  format_code: true  # Apply code formatting after generation

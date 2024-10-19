@@ -1,0 +1,108 @@
+{
+  "api_info": {
+    "name": "SampleAPI",
+    "version": "1.0.0",
+    "description": "Sample API for demonstrating APIForge",
+    "authentication": {
+      "type": "bearer_token",
+      "scopes": ["read", "write"]
+    }
+  },
+  "endpoints": [
+    {
+      "name": "GetUser",
+      "path": "/users/{user_id}",
+      "method": "GET",
+      "description": "Fetch user details by user ID",
+      "parameters": [
+        {
+          "name": "user_id",
+          "in": "path",
+          "required": true,
+          "type": "string",
+          "description": "The ID of the user to retrieve"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful response with user data",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "email": { "type": "string" },
+              "created_at": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "404": {
+          "description": "User not found"
+        }
+      }
+    },
+    {
+      "name": "CreateUser",
+      "path": "/users",
+      "method": "POST",
+      "description": "Create a new user",
+      "request_body": {
+        "description": "User data to create",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "email": { "type": "string" },
+            "password": { "type": "string" }
+          },
+          "required": ["name", "email", "password"]
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "User successfully created",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "email": { "type": "string" },
+              "created_at": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid input data"
+        }
+      }
+    }
+  ],
+  "generation_settings": {
+    "languages": {
+      "python": {
+        "library": "requests",
+        "output_directory": "./clients/python/"
+      },
+      "cpp": {
+        "library": "libcurl",
+        "output_directory": "./clients/cpp/"
+      },
+      "javascript": {
+        "library": "axios",
+        "output_directory": "./clients/javascript/"
+      },
+      "go": {
+        "library": "http.Client",
+        "output_directory": "./clients/go/"
+      }
+    },
+    "common_settings": {
+      "timeout": 30,
+      "retry_policy": {
+        "max_attempts": 3,
+        "backoff_strategy": "exponential"
+      },
+      "logging": true
+    }
+  }
+}
