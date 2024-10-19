@@ -88,7 +88,7 @@ After successfully installing APIForge, you can start generating client code usi
            }
        ]
    }
-```
+
 
 **Run the Generator**: 
 Execute the API client generator with your specification file. The command may vary based on the specific component you are using.
