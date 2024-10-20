@@ -21,7 +21,7 @@ To get started with APIForge, follow these steps:
    ```bash
    git clone https://github.com/Sanidhyafeaturist/APIForge.git
    cd APIForge
-```
+``
 
 2. **Install Dependencies**:
    Depending on the components you plan to use, install the required dependencies for each language:
