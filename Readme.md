@@ -84,3 +84,9 @@ Import the generated client code into your application and start making API call
 
 ## License
 This Project is licensed by MIT License.
+
+## Contributions
+
+Contributions are welcomed but it should be relevent and whenever you contribute make sure to add your name and link to your github profile in the 'Contributers.md'.
+Read 'Code Of Conduct' for more details
+
