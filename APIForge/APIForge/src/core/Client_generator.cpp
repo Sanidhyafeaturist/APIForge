@@ -1,13 +1,16 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <curl/curl.h>
+#include "curl/include/curl/curl.h"
 #include <sys/stat.h>
-#include <nlohmann/json.hpp> // Include the nlohmann JSON library
+#include <sstream>
 
 #ifdef _WIN32
 #include <direct.h>
-#define mkdir _mkdir // For Windows compatibility
+#define mkdir(dir, mode) _mkdir(dir) // For Windows, _mkdir takes only one argument
+#else
+#include <sys/types.h>
+#include <unistd.h>
 #endif
 
 // Function to handle API responses
@@ -17,43 +20,87 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::stri
     return totalSize;
 }
 
-// Function to generate a basic API client
-void generateApiClient(const std::string& baseUrl, const std::string& endpoint, const std::string& method, const std::string& outputDir) {
-    // Ensure output directory exists
-    struct stat info;
-    if (stat(outputDir.c_str(), &info) != 0) {
-        mkdir(outputDir.c_str(), 0777); // Use _mkdir for Windows
+// Function to manually parse JSON configuration (without using external libraries)
+void parseJsonConfig(const std::string& jsonContent, std::string& baseUrl, std::string& endpoint, std::string& method, std::string& headers, std::string& body) {
+    std::istringstream ss(jsonContent);
+    std::string line;
+    while (std::getline(ss, line)) {
+        // Parse baseUrl
+        if (line.find("\"baseUrl\"") != std::string::npos) {
+            size_t start = line.find(":") + 2;
+            size_t end = line.find_last_of("\"");
+            baseUrl = line.substr(start, end - start);
+        }
+        // Parse endpoint
+        if (line.find("\"endpoint\"") != std::string::npos) {
+            size_t start = line.find(":") + 2;
+            size_t end = line.find_last_of("\"");
+            endpoint = line.substr(start, end - start);
+        }
+        // Parse method
+        if (line.find("\"method\"") != std::string::npos) {
+            size_t start = line.find(":") + 2;
+            size_t end = line.find_last_of("\"");
+            method = line.substr(start, end - start);
+        }
+        // Parse headers (if present)
+        if (line.find("\"headers\"") != std::string::npos) {
+            size_t start = line.find(":") + 2;
+            size_t end = line.find_last_of("\"");
+            headers = line.substr(start, end - start);
+        }
+        // Parse body (for POST/PUT methods)
+        if (line.find("\"body\"") != std::string::npos) {
+            size_t start = line.find(":") + 2;
+            size_t end = line.find_last_of("\"");
+            body = line.substr(start, end - start);
+        }
     }
+}
+
+// Function to generate the API client based on the JSON configuration
+void generateApiClient(const std::string& baseUrl, const std::string& endpoint, const std::string& method, const std::string& headers, const std::string& body, const std::string& outputDir) {
+    // Ensure the output directory exists
+#ifdef _WIN32
+    _mkdir(outputDir.c_str()); // Use _mkdir for Windows
+#else
+    mkdir(outputDir.c_str(), 0777); // Use POSIX mkdir for Unix-like systems
+#endif
 
     // Start creating the client code
     std::ofstream clientFile(outputDir + "/ApiClient.cpp");
-    if (!clientFile.is_open()) {
-        std::cerr << "Failed to open file: " << outputDir + "/ApiClient.cpp" << std::endl;
-        return;
-    }
 
-    // Write the necessary includes and callback function for API response handling
     clientFile << "#include <iostream>\n";
     clientFile << "#include <curl/curl.h>\n\n";
 
-    clientFile << "// Function to handle API responses\n";
-    clientFile << "static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* out) {\n";
-    clientFile << "    size_t totalSize = size * nmemb;\n";
-    clientFile << "    out->append((char*)contents, totalSize);\n";
-    clientFile << "    return totalSize;\n";
-    clientFile << "}\n\n";
-
-    // Write the makeApiCall function
     clientFile << "// Function to handle the API call\n";
     clientFile << "std::string makeApiCall(const std::string& url) {\n";
     clientFile << "    CURL* curl;\n";
     clientFile << "    CURLcode res;\n";
     clientFile << "    std::string responseString;\n\n";
-
+    
     clientFile << "    curl_global_init(CURL_GLOBAL_DEFAULT);\n";
     clientFile << "    curl = curl_easy_init();\n";
     clientFile << "    if(curl) {\n";
     clientFile << "        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());\n";
+
+    // Add dynamic method handling
+    if (method == "POST" || method == "PUT") {
+        clientFile << "        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, \"" << method << "\");\n";
+        if (!body.empty()) {
+            clientFile << "        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, \"" << body << "\");\n";
+        }
+    } else {
+        clientFile << "        curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);\n";
+    }
+
+    // Handle headers if any
+    if (!headers.empty()) {
+        clientFile << "        struct curl_slist *headers = NULL;\n";
+        clientFile << "        headers = curl_slist_append(headers, \"" << headers << "\");\n";
+        clientFile << "        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);\n";
+    }
+
     clientFile << "        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);\n";
     clientFile << "        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseString);\n";
     clientFile << "        res = curl_easy_perform(curl);\n";
@@ -61,6 +108,9 @@ void generateApiClient(const std::string& baseUrl, const std::string& endpoint, 
     clientFile << "            std::cerr << \"curl_easy_perform() failed: \" << curl_easy_strerror(res) << std::endl;\n";
     clientFile << "        }\n";
     clientFile << "        curl_easy_cleanup(curl);\n";
+    if (!headers.empty()) {
+        clientFile << "        curl_slist_free_all(headers);\n";
+    }
     clientFile << "    }\n";
     clientFile << "    curl_global_cleanup();\n";
     clientFile << "    return responseString;\n";
@@ -78,32 +128,30 @@ void generateApiClient(const std::string& baseUrl, const std::string& endpoint, 
     std::cout << "API client generated in " << outputDir << "/ApiClient.cpp\n";
 }
 
-// Function to read configurations from JSON file
-nlohmann::json readConfig(const std::string& configFile) {
-    std::ifstream file(configFile);
-    if (!file.is_open()) {
-        std::cerr << "Failed to open configuration file: " << configFile << std::endl;
-        exit(1);
+int main() {
+    // Read the JSON configuration file
+    std::ifstream configFile("json.json");
+    if (!configFile) {
+        std::cerr << "Error: Could not open configuration file.\n";
+        return 1;
     }
 
-    nlohmann::json config;
-    file >> config;
-    return config;
-}
+    // Read the contents of the JSON file into a string
+    std::stringstream buffer;
+    buffer << configFile.rdbuf();
+    std::string jsonContent = buffer.str();
 
-int main() {
-    // Read configuration from JSON file
-    std::string configFile = "api_config.json"; // Path to your JSON config file
-    nlohmann::json config = readConfig(configFile);
+    // Variables to hold configuration values
+    std::string baseUrl, endpoint, method, headers, body;
 
-    // Extract configuration values
-    std::string baseUrl = config["baseUrl"];
-    std::string endpoint = config["endpoint"];
-    std::string method = config["method"];
-    std::string outputDir = "./output"; // The directory to store the generated client
+    // Parse the JSON file to extract configuration values
+    parseJsonConfig(jsonContent, baseUrl, endpoint, method, headers, body);
 
-    // Generate API client based on the configuration
-    generateApiClient(baseUrl, endpoint, method, outputDir);
+    // Directory to generate the API client code
+    std::string outputDir = "./generated_clients";
+
+    // Generate the API client code based on the configuration
+    generateApiClient(baseUrl, endpoint, method, headers, body, outputDir);
 
     return 0;
 }
