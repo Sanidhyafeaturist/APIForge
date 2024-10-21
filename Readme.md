@@ -1,5 +1,6 @@
 
-<div style="background-image: url('OIP.jpeg'); padding: 20; color: white;">
+![Banner](OIP.jpeg)
+
 
 
 # APIForge
