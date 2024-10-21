@@ -1,8 +1,7 @@
 
-<img src="OIP.jpeg" style="width: 100; height: auto;">
-
-
-
+<h1 align="center">
+ <img src="OIP.jpeg" />
+</h1>
 
 # APIForge
 
