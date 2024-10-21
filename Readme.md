@@ -28,35 +28,7 @@ To get started with APIForge, follow these steps:
    cd APIForge
 ``
 
-2. **Install Dependencies**:
-   Depending on the components you plan to use, install the required dependencies for each language:
-
-   - For Python:
-     ```bash
-     pip install -r requirements.txt
-     ```
-
-   - For JavaScript:
-     ```bash
-     npm install
-     ```
-
-   - For Go:
-     ```bash
-     go mod tidy
-     ```
-3. **Build the Project**:
-   Use the following command to build the project:
-   ```bash
-   ./build.sh
-
-
-**If you are using Windows, run**:
-```bash
-compile.bat
-```
-
-4. **Run Tests** (optional):
+2. **Run Tests** (optional):
    To ensure everything is working as expected, run the tests:
 
    - For Python:
@@ -93,7 +65,7 @@ After successfully installing APIForge, you can start generating client code usi
            }
        ]
    }
-
+**Note - you also need to specify the url in the json file** 
 
 **Run the Generator**: 
 Execute the API client generator with your specification file. The command may vary based on the specific component you are using.
@@ -101,7 +73,7 @@ Execute the API client generator with your specification file. The command may v
 For example:
 
 ```bash
-./APIForge generate --spec path/to/your/api_spec.json
+(your preferred generator eg if you need to generate a c++ client you need to use Client_generator.exe) generate --spec path/to/your/api_spec.json
 ```
 
 **Review the Generated Client Code**: 
