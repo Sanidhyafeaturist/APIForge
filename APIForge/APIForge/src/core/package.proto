@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+option go_package = "github.com/Sanidhyafeaturist/APIForge/api";  // Correctly set the Go package
+
+package api;
+
+// The API service definition
+service UserService {
+    rpc GetUsers(Empty) returns (UserList);
+    rpc CreateUser(UserRequest) returns (UserResponse);
+}
+
+// Message for empty request
+message Empty {}
+
+// User data structure
+message User {
+    string id = 1;
+    string name = 2;
+    string email = 3;
+}
+
+// Response containing a list of users
+message UserList {
+    repeated User users = 1;
+}
+
+// Request message for creating a user
+message UserRequest {
+    string name = 1;
+    string email = 2;
+}
+
+// Response message for user creation
+message UserResponse {
+    string id = 1;
+    string message = 2;
+}

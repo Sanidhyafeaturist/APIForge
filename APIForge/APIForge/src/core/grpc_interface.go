@@ -8,11 +8,12 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"github.com/Sanidhyafeaturist/APIForge/api"
 )
 
 type Client struct {
 	conn   *grpc.ClientConn
-	client YourServiceClient // Replace with your gRPC service client interface
+	client NewClient
 }
 
 // NewClient initializes a new gRPC client
@@ -22,7 +23,7 @@ func NewClient(address string) (*Client, error) {
 		return nil, fmt.Errorf("did not connect: %v", err)
 	}
 
-	client := NewYourServiceClient(conn) // Replace with your gRPC service client interface
+	client := UserService(conn) // Replace with your gRPC service client interface
 	return &Client{conn: conn, client: client}, nil
 }
 
@@ -42,8 +43,9 @@ func (c *Client) CallExample(ctx context.Context, userID string) (*ExampleRespon
 	ctx = metadata.NewIncomingContext(ctx, md)
 
 	// Create request
-	req := &ExampleRequest{UserId: userID} // Replace with your request type
-	res, err := c.client.Example(ctx, req) // Replace with your method name
+	req := &CreateUserRequest{
+		Name:  userName, // Use the actual user name
+		Email: userEmail, // Use the actual user email
 	if err != nil {
 		return nil, fmt.Errorf("could not call Example: %v", err)
 	}
